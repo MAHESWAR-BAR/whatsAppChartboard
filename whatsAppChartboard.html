@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's App Chatboard</title>
+    <style>
+        body {
+            font-family: 'poppins', sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            /* Prevent scrollbars */
+        }
+
+        .chat-container,
+        .logo-container {
+            position: absolute;
+            transition: all 0.5s ease;
+        }
+
+        .chat-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            /* Responsive width */
+            max-width: 400px;
+            /* Max width for larger screens */
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            /* Responsive height */
+            max-height: 500px;
+            /* Max height for larger screens */
+            overflow: hidden;
+            display: none;
+            /* Initially hidden */
+        }
+
+        .logo-container {
+            width: 15vw;
+            /* Responsive width */
+            height: 15vw;
+            /* Responsive height */
+            max-width: 100px;
+            /* Max width */
+            max-height: 100px;
+            /* Max height */
+            background-color: #9747FF;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 4vw;
+            /* Responsive font size */
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 0;
+        }
+
+        .close-btn:hover {
+            background: #0056b3;
+        }
+
+        .chat-box {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f9f9f9;
+        }
+
+        .chat-box .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            display: inline-block;
+            max-width: 80%;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .chat-box .message.bot {
+            background-color: #9747FF;
+            color: white;
+            text-align: left;
+            border-radius: 10px 10px 10px 0;
+            margin-right: auto;
+            /* Align to the left */
+            display: block;
+            /* Make sure it appears on a new line */
+        }
+
+        .chat-box .message.user {
+            background-color: #fff;
+            color: #9747FF;
+            text-align: right;
+            border-radius: 10px 10px 0 10px;
+            margin-left: auto;
+            /* Align to the right */
+            display: block;
+            /* Make sure it appears on a new line */
+            border: 0.5px solid #9747FF;
+        }
+
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #9747FF;
+            border-radius: 18px;
+        }
+
+        .input-container button {
+            padding: 10px;
+            border: none;
+            border-radius: 3px;
+            background-color: #9747FF;
+            color: white;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .suggestions-container {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .suggestion-button {
+            padding: 10px;
+            border: none;
+            border-radius: 20px;
+            border-color: #9747FF;
+            cursor: pointer;
+            border: 1px solid #9747FF;
+            text-align: center;
+            color: #9747FF;
+        }
+
+        .image {
+            margin: auto;
+            background: linear-gradient(45deg, #E7FFEC, #B5F1FA);
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            border-radius: 20px 20px 0px 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="logo-container" onclick="openChat()">☰</div>
+
+    <div class="chat-container" id="chat-container">
+        <div class="image">
+            <img src="rectangle_7.png" aria-placeholder="logo" style="width:auto; height:13vh; margin-bottom: 10px; ">
+        </div>
+
+        <div class="close-btn" onclick="closeChat()">✖</div>
+        <div class="chat-box" id="chat-box">
+            <div class="message bot">Hello! Please enter your mobile number to get started.</div>
+        </div>
+        <div class="suggestions-container" id="suggestions" style="display: none;">
+            <button class="suggestion-button" onclick="showSuggestion('Hello')">Hello</button>
+            <button class="suggestion-button" onclick="showSuggestion('Track Order')">Track Order</button>
+            <button class="suggestion-button" onclick="showSuggestion('Book Appointment')">Book Appointment</button>
+            <button class="suggestion-button" onclick="showSuggestion('View Other Services')">View Other Services</button>
+            <button class="suggestion-button" onclick="showSuggestion('I Need Some Assistance')">I Need Some Assistance</button>
+        </div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type your response here..." onkeypress="handleKeyPress(event)">
+            <button onclick="processInput()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_OTP = '1234'; // Default OTP for testing
+        let step = 0;
+
+        function processInput(fromSuggestion = false) {
+            const inputField = document.getElementById('user-input');
+            const userInput = inputField.value.trim();
+            const chatBox = document.getElementById('chat-box');
+
+            if (userInput) {
+                chatBox.innerHTML += `<div class="message user">${userInput}</div>`;
+                inputField.value = '';
+
+                if (step === 0) {
+                    // Process mobile number
+                    if (isValidMobile(userInput)) {
+                        chatBox.innerHTML += `<div class="message bot">Thanks! An OTP has been sent to ${userInput}. Please enter the OTP to proceed.</div>`;
+                        step = 1;
+                    } else {
+                        chatBox.innerHTML += `<div class="message bot">Invalid mobile number. Please enter a valid mobile number.</div>`;
+                    }
+                } else if (step === 1) {
+                    // Process OTP
+                    if (userInput === DEFAULT_OTP) {
+                        chatBox.innerHTML += `<div class="message bot">OTP verified successfully! What can I help you with today?</div>`;
+                        document.getElementById('suggestions').style.display = 'flex';
+                        step = 2;
+                    } else {
+                        chatBox.innerHTML += `<div class="message bot">Invalid OTP. Please try again.</div>`;
+                    }
+                } else if (step === 2) {
+                    // Handle unexpected input after OTP verification, only if it's not from a suggestion
+                    if (!fromSuggestion) {
+                        chatBox.innerHTML += `<div class="message bot">Please choose one of the options below:</div>`;
+                    }
+                    document.getElementById('suggestions').style.display = 'flex';
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        function isValidMobile(mobile) {
+            // Simple validation for mobile number
+            return /^[0-9]{10}$/.test(mobile);
+        }
+
+        function showSuggestion(suggestion) {
+            const inputField = document.getElementById('user-input');
+            inputField.value = suggestion;
+            processInput(true);
+        }
+
+        function closeChat() {
+            document.getElementById('chat-container').style.display = 'none';
+            document.querySelector('.logo-container').style.display = 'flex';
+        }
+
+        function openChat() {
+            document.querySelector('.logo-container').style.display = 'none';
+            document.getElementById('chat-container').style.display = 'flex';
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                processInput();
+            }
+        }
+    </script>
+</body>
+
+</html>
